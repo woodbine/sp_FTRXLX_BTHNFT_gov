@@ -115,7 +115,7 @@ for block_doc in blocks_doc:
     csvYr = block_doc.find('span', 'inner-cell').text.split()[1]
     doc_link = block_doc.find_all('a')[-1]['href']
     csvMth = convert_mth_strings(csvMth.upper())
-    data.append([csvYr, csvMth, url])
+    data.append([csvYr, csvMth, doc_link])
 
 
 
