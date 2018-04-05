@@ -9,7 +9,8 @@ import urllib2
 from datetime import datetime
 from bs4 import BeautifulSoup
 
-#### FUNCTIONS 1.0
+#### FUNCTIONS 1.1
+import requests
 
 def validateFilename(filename):
     filenameregex = '^[a-zA-Z0-9]+_[a-zA-Z0-9]+_[a-zA-Z0-9]+_[0-9][0-9][0-9][0-9]_[0-9QY][0-9]$'
@@ -37,19 +38,19 @@ def validateFilename(filename):
 
 def validateURL(url):
     try:
-        r = urllib2.urlopen(url)
+        r = requests.get(url)
         count = 1
-        while r.getcode() == 500 and count < 4:
+        while r.status_code == 500 and count < 4:
             print ("Attempt {0} - Status code: {1}. Retrying.".format(count, r.status_code))
             count += 1
-            r = urllib2.urlopen(url)
+            r = requests.get(url)
         sourceFilename = r.headers.get('Content-Disposition')
 
         if sourceFilename:
             ext = os.path.splitext(sourceFilename)[1].replace('"', '').replace(';', '').replace(' ', '')
         else:
             ext = os.path.splitext(url)[1]
-        validURL = r.getcode() == 200
+        validURL = r.status_code == 200
         validFiletype = ext.lower() in ['.csv', '.xls', '.zip', '.xlsx', '.pdf']
         return validURL, validFiletype
     except:
@@ -102,22 +103,12 @@ blocks = soup.find_all('div', 'document-icon')
 for block in blocks:
     link = block.find('a')
     url = link['href']
-    csvMth = link.find('span').text.split('-')[0][:3]
-    csvYr = link.find('span').text.split('-')[-1]
+    csvMth = link.find('span').text.replace(u'Transactions over £25000 ', '').split('-')[0][:3]
+    csvYr = link.find('span').text.replace(u'Transactions over £25000 ', '').split('-')[-1]
+    if '20' not in csvYr:
+        csvYr = '20'+csvYr
     csvMth = convert_mth_strings(csvMth.upper())
     data.append([csvYr, csvMth, url])
-page_link = soup.find('a', attrs={'rel':'noopener noreferrer'})['href']
-html = urllib2.urlopen(page_link)
-soup_page = BeautifulSoup(html, 'lxml')
-blocks_doc = soup_page.find_all('div', 'col-sm-6')
-for block_doc in blocks_doc:
-    csvMth = block_doc.find('span', 'inner-cell').text.split()[0][:3]
-    csvYr = block_doc.find('span', 'inner-cell').text.split()[1]
-    doc_link = block_doc.find_all('a')[-1]['href']
-    csvMth = convert_mth_strings(csvMth.upper())
-    data.append([csvYr, csvMth, doc_link])
-
-
 
 
 #### STORE DATA 1.0
